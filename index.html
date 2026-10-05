@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsvendor Decision Simulation</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+    input[type=range]::-webkit-slider-thumb {
+      height: 22px;
+      width: 22px;
+      border-radius: 9999px;
+      background: #4f46e5;
+      cursor: pointer;
+      -webkit-appearance: none;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+      border: 2px solid #ffffff;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white">
+
+  <!-- ================= AUTHENTICATION MODAL ================= -->
+  <div id="loginGateOverlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+          <i data-lucide="newspaper" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-slate-900">Newsvendor Sim</h1>
+          <p class="text-xs text-slate-500">Inventory Planning & Decision Analysis</p>
+        </div>
+      </div>
+
+      <!-- Role Selector Tabs -->
+      <div class="flex p-1 bg-slate-100 rounded-xl mb-6 border border-slate-200">
+        <button id="roleTabStudent" onclick="switchLoginRole('student')" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-white text-indigo-600 shadow-sm transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="graduation-cap" class="w-4 h-4"></i> Student
+        </button>
+        <button id="roleTabInstructor" onclick="switchLoginRole('instructor')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> Teacher Portal
+        </button>
+      </div>
+
+      <!-- Student Sign In Form -->
+      <form id="formStudentLogin" onsubmit="handleStudentLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Your Full Name</label>
+          <input type="text" id="loginStudentName" required placeholder="Enter your full name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-semibold text-slate-600">Select Section / Class</label>
+            <button type="button" onclick="loadClassListDropdown()" class="text-[10px] text-indigo-600 hover:underline flex items-center gap-0.5">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh classes
+            </button>
+          </div>
+          <select id="loginStudentClass" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white font-mono-num transition">
+            <option value="">Select your class & teacher</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Class Passcode</label>
+          <input type="password" id="loginStudentPasscode" placeholder="Enter class passcode" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white font-mono-num transition">
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">Your 30-round campaign runs once and saves permanently to your teacher's record.</p>
+        <button type="submit" class="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
+          Enter Simulation <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Teacher Sign In Form -->
+      <form id="formInstructorLogin" onsubmit="handleInstructorLogin(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Teacher Username</label>
+          <input type="text" id="loginTeacherUsername" required placeholder="Enter username" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white transition">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+          <input type="password" id="loginTeacherPassword" required placeholder="Enter password" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white font-mono-num transition">
+        </div>
+        <button type="submit" class="w-full mt-2 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 transition">
+          Unlock Teacher Portal <i data-lucide="shield" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= INSTRUCTION BRIEFING MODAL ================= -->
+  <div id="studentInstructionModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-200">
+      
+      <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
+          <i data-lucide="scroll" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+            Rules of the Game
+          </span>
+          <h2 class="text-xl font-black text-slate-900 tracking-tight mt-0.5">Newsvendor Problem Instructions</h2>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm text-slate-700 leading-relaxed space-y-3 font-normal">
+        <p>
+          You will play the role of a newspaper vendor in a game consisting of <strong>30 rounds</strong>, with one ordering decision to be made in each round. All 30 rounds are payoff-relevant.
+        </p>
+        <p>
+          In each round, you must decide how many newspapers to order before knowing the actual customer demand. You may order any integer quantity.
+        </p>
+        <div class="grid grid-cols-2 gap-3 py-1">
+          <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+            <span class="text-[10px] uppercase tracking-wider text-emerald-800 font-bold block">Selling Price</span>
+            <span class="text-lg font-black text-emerald-700 font-mono-num">$12.00</span>
+            <span class="text-[11px] text-emerald-600 block">per newspaper sold</span>
+          </div>
+          <div class="bg-rose-50 border border-rose-200 p-3 rounded-xl">
+            <span class="text-[10px] uppercase tracking-wider text-rose-800 font-bold block">Purchase Cost</span>
+            <span class="text-lg font-black text-rose-700 font-mono-num">$3.00</span>
+            <span class="text-[11px] text-rose-600 block">per newspaper ordered</span>
+          </div>
+        </div>
+        <p>
+          Customer demand will always be <strong>between 201 and 500 newspapers</strong>, and every integer quantity between 201 and 500 is equally likely to occur. The computer will randomly generate the demand after you submit your order.
+        </p>
+        <p>
+          Once demand is realized, the quantity sold and your profit for that round will be calculated automatically:
+          $$\text{Round Profit} = \$12 \times \min(Q, D) - \$3 \times Q$$
+        </p>
+        <p class="text-xs text-slate-500">
+          At the end of the game, the profits from all 30 rounds will be added together to determine your total payoff. Your goal is to make effective ordering decisions and maximize your total profit over the 30 rounds.
+        </p>
+      </div>
+
+      <button onclick="dismissStudentInstructionModal()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
+        <span>I Understand — Start Round 1</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center font-black text-white text-base shadow-sm">
+          N
+        </div>
+        <div>
+          <span class="font-bold text-slate-900 text-sm sm:text-base tracking-tight block">Newsvendor Sim</span>
+          <span id="headerRoleBadge" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Connecting...</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button id="btnHeaderRules" onclick="openStudentInstructionModal()" title="View Rules" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition items-center gap-1.5 shadow-sm sm:flex">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-indigo-600"></i> Rules
+        </button>
+
+        <div class="text-right hidden sm:block">
+          <p id="headerUserName" class="text-xs font-bold text-slate-900">Guest</p>
+          <p id="headerUserSub" class="text-[10px] text-slate-500 font-mono-num">Class: --</p>
+        </div>
+        <button onclick="handleSignOut()" title="Sign Out" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 flex items-center justify-center text-slate-600 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- ================= STUDENT VIEW ================= -->
+    <div id="nvStudentPortal" class="space-y-6">
+      
+      <!-- ORGANIZED TOP INFO / KPI CARDS -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        
+        <!-- Metric 1: Round Progress -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Campaign Round</span>
+            <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+          </div>
+          <div>
+            <div id="nvRoundStatusBadge" class="text-xl sm:text-2xl font-black text-slate-900 font-mono-num">Round 1</div>
+            <div class="text-[11px] text-slate-500">of 30 Payoff Rounds</div>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+            <div id="nvProgressBar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Metric 2: Price -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Selling Price</span>
+            <i data-lucide="tag" class="w-4 h-4 text-emerald-600"></i>
+          </div>
+          <div>
+            <div class="text-xl sm:text-2xl font-black text-emerald-600 font-mono-num">$12.00</div>
+            <div class="text-[11px] text-slate-500">Revenue per paper sold</div>
+          </div>
+          <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-2 w-fit">Customer Payment</span>
+        </div>
+
+        <!-- Metric 3: Cost -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Unit Cost</span>
+            <i data-lucide="receipt" class="w-4 h-4 text-rose-600"></i>
+          </div>
+          <div>
+            <div class="text-xl sm:text-2xl font-black text-rose-600 font-mono-num">$3.00</div>
+            <div class="text-[11px] text-slate-500">Purchase per paper ordered</div>
+          </div>
+          <span class="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md mt-2 w-fit">Supplier Cost</span>
+        </div>
+
+        <!-- Metric 4: Demand Distribution -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700">Demand Range</span>
+            <i data-lucide="shuffle" class="w-4 h-4 text-blue-600"></i>
+          </div>
+          <div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900 font-mono-num">[201, 500]</div>
+            <div class="text-[11px] text-slate-500">Uniform Distribution</div>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md mt-2 w-fit">Equal Likelihood</span>
+        </div>
+
+        <!-- Metric 5: Cumulative Profit -->
+        <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+          <div class="flex items-center justify-between text-emerald-800 mb-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-900">Total Profit</span>
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-700"></i>
+          </div>
+          <div>
+            <div id="nvCumulativeProfit" class="text-2xl sm:text-3xl font-black text-emerald-700 font-mono-num">$0</div>
+            <div class="text-[11px] text-emerald-800">Cumulative Net Payoff</div>
+          </div>
+          <span id="lblAvgProfitPill" class="text-[10px] font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-md mt-2 w-fit">Avg: $0/round</span>
+        </div>
+
+      </div>
+
+      <!-- ORDERING DECISION CARD WITH SLIDER (201 TO 500) -->
+      <div class="bg-white border-2 border-slate-200 rounded-3xl p-6 sm:p-7 shadow-sm">
+        <div id="orderInputSection" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 border border-indigo-200">
+                  Decision Step
+                </span>
+                <span id="lblCurrentRoundHeader" class="text-xs font-bold text-slate-600">Round 1 of 30</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">Select Order Quantity ($Q$)</h3>
+              <p class="text-xs text-slate-500">Slide to specify the number of newspapers to order for today's market.</p>
+            </div>
+            
+            <!-- Live Slider Value Callout -->
+            <div class="bg-indigo-50 border border-indigo-200 px-5 py-2.5 rounded-2xl text-center self-start sm:self-center">
+              <span class="text-[10px] uppercase font-bold text-indigo-700 tracking-wider block">Quantity to Order</span>
+              <span id="sliderValueBadge" class="text-3xl font-black text-indigo-600 font-mono-num">350</span>
+              <span class="text-[10px] text-indigo-500 block">units (Cost: <span id="lblLiveOrderCost">$1,050</span>)</span>
+            </div>
+          </div>
+
+          <!-- Slider Form -->
+          <form onsubmit="handleOrderSubmission(event)" class="space-y-5">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center text-xs font-bold text-slate-500 font-mono-num">
+                <span class="flex items-center gap-1"><i data-lucide="arrow-down-left" class="w-3 h-3 text-slate-400"></i> Min: 201</span>
+                <span class="text-indigo-600 font-semibold text-[11px]">Adjust order between 201 and 500</span>
+                <span class="flex items-center gap-1">Max: 500 <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-400"></i></span>
+              </div>
+
+              <!-- Range Slider Control -->
+              <input 
+                type="range" 
+                id="rangeOrderQuantity" 
+                min="201" 
+                max="500" 
+                step="1" 
+                value="350" 
+                oninput="syncSliderValue(this.value)"
+                class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 accent-indigo-600 transition"
+              >
+
+              <!-- Step Reference Markers -->
+              <div class="flex justify-between text-[10px] text-slate-400 font-mono-num pt-1 px-1">
+                <span>201</span>
+                <span>250</span>
+                <span>300</span>
+                <span>350</span>
+                <span>400</span>
+                <span>450</span>
+                <span>500</span>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <i data-lucide="info" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                <span>Decision rule: Demand $D$ is sampled immediately after ordering. All 30 rounds are irreversible.</span>
+              </div>
+              <button type="submit" id="btnSubmitOrder" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-2xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i> Submit Round Order
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Locked Banner (After 30 Rounds) -->
+        <div id="nvCompletedBanner" class="hidden text-center py-6 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-1">
+          <p class="text-emerald-800 font-black text-base flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+            30-Round Simulation Completed & Synchronized!
+          </p>
+          <p class="text-xs text-emerald-700">All 30 orders and profit outcomes have been saved to your instructor's sheet.</p>
+        </div>
+      </div>
+
+      <!-- VISUAL ORDER VS DEMAND CHART (CLEAN STUDENT VIEW) -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="line-chart" class="w-4 h-4 text-indigo-600"></i> Trajectory: Order Quantity ($Q$) vs. Realized Demand ($D$)
+            </h4>
+            <p class="text-xs text-slate-500">Visualizes round-by-round overstocking, understocking, and order adjustments.</p>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-semibold">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span>
+              <span class="text-slate-700">Order Quantity ($Q$)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+              <span class="text-slate-700">Realized Demand ($D$)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full h-64 sm:h-72 relative">
+          <canvas id="nvTrajectoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Student Round-by-Round Ledger -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-indigo-600"></i> Round Performance Ledger
+          </h4>
+          <div class="flex items-center gap-4 text-xs font-mono-num text-slate-600 font-medium">
+            <span>Avg Order: <strong id="lblAvgOrderDisplay" class="text-indigo-600">0</strong></span>
+            <span>Avg Profit: <strong id="lblAvgProfitDisplay" class="text-emerald-600">$0</strong></span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-80 overflow-y-auto border border-slate-100 rounded-xl">
+          <table class="w-full text-left text-xs font-mono-num">
+            <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold font-sans">
+              <tr>
+                <th class="py-2.5 px-3">Round</th>
+                <th class="py-2.5 px-3 text-right">Order ($Q$)</th>
+                <th class="py-2.5 px-3 text-right">Demand ($D$)</th>
+                <th class="py-2.5 px-3 text-right">Sold</th>
+                <th class="py-2.5 px-3 text-right">Unsold</th>
+                <th class="py-2.5 px-3 text-right">Stockout</th>
+                <th class="py-2.5 px-3 text-right">Round Profit</th>
+                <th class="py-2.5 px-3 text-right">Total Payoff</th>
+              </tr>
+            </thead>
+            <tbody id="nvStudentLedgerBody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="8" class="py-6 text-center text-slate-400 font-sans">No orders placed yet. Select quantity with the slider above.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= TEACHER PANEL ================= -->
+    <div id="nvInstructorPortal" class="space-y-6 hidden">
+      
+      <!-- Teacher Header with Sync Button -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200">
+            Teacher Command Portal
+          </span>
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight mt-1">
+            Welcome, <span id="teacherDashboardName" class="text-purple-700">Teacher</span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5" id="teacherUsernameSub">Username: --</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnFetchSyncResults" onclick="fetchGoogleSheetRoster()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> 
+            <span>Fetch & Sync Results</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Add New Class Form -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-purple-600"></i> Add a New Class / Section
+        </h3>
+        <p class="text-xs text-slate-500 mb-4">Create a new class code and student passcode. It will immediately be saved to <strong class="text-slate-700">UserRoles</strong>.</p>
+
+        <form onsubmit="handleTeacherAddClass(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Class Code</label>
+            <input type="text" id="teacherNewClassNum" required placeholder="e.g. BSAN-7021-02" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono-num uppercase focus:outline-none focus:border-purple-600">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Student Passcode</label>
+            <input type="text" id="teacherNewClassPass" required placeholder="e.g. FALL26" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono-num focus:outline-none focus:border-purple-600">
+          </div>
+          <div class="flex items-end">
+            <button type="submit" id="btnSaveNewClass" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i> Add Class to Sheet
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Slide Benchmark Reference Card (Teacher View Only) -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4 text-indigo-600"></i> Newsvendor Solution Benchmark
+          </h3>
+          <span class="text-xs text-slate-500 font-medium">Instructor Reference</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
+          <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Underage Cost ($c_u$)</span>
+            <span class="text-lg font-black text-slate-900 font-mono-num">$9.00</span>
+            <span class="text-[11px] text-slate-500 block">$12 - $3</span>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Overage Cost ($c_o$)</span>
+            <span class="text-lg font-black text-slate-900 font-mono-num">$3.00</span>
+            <span class="text-[11px] text-slate-500 block">$3 - $0 salvage</span>
+          </div>
+          <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-200">
+            <span class="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block">Critical Ratio ($CR$)</span>
+            <span class="text-lg font-black text-indigo-700 font-mono-num">0.75</span>
+            <span class="text-[11px] text-indigo-600 block">9 / (9 + 3) = 75%</span>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
+            <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">Optimal Order ($Q^*$)</span>
+            <span class="text-lg font-black text-emerald-700 font-mono-num">425 units</span>
+            <span class="text-[11px] text-emerald-700 block">201 + 0.75 &times; 299</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Roster Table -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Student Performance Roster</h3>
+            <p class="text-xs text-slate-500">Ranked by Total Profit • Exclusive to your sections</p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <label for="teacherClassFilterSelect" class="text-xs font-semibold text-slate-600 whitespace-nowrap">Filter Class:</label>
+              <select id="teacherClassFilterSelect" onchange="handleClassFilterChange(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-600 font-mono-num transition">
+                <option value="ALL">All My Classes</option>
+              </select>
+            </div>
+            <button onclick="fetchGoogleSheetRoster()" title="Quick Refresh" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center justify-center">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+            </button>
+            <span id="instStudentCount" class="text-xs font-mono-num px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-semibold whitespace-nowrap">0 Submissions</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-80 overflow-y-auto border border-slate-100 rounded-xl">
+          <table class="w-full text-left text-xs">
+            <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+              <tr>
+                <th class="py-2.5 px-3 text-center w-14">Rank</th>
+                <th class="py-2.5 px-3">Class</th>
+                <th class="py-2.5 px-3">Student Name</th>
+                <th class="py-2.5 px-3">Archetype</th>
+                <th class="py-2.5 px-3 text-right">Avg Order</th>
+                <th class="py-2.5 px-3 text-right">Total Profit</th>
+                <th class="py-2.5 px-3 text-center">Rounds Log</th>
+              </tr>
+            </thead>
+            <tbody id="instRosterBody" class="divide-y divide-slate-100 font-mono-num">
+              <tr>
+                <td colspan="7" class="py-6 text-center text-slate-400 font-sans">No submissions found. Click 'Fetch & Sync Results' above.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= INSTRUCTOR DETAIL MODAL ================= -->
+  <div id="instructorStudentLogModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl relative flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+        <div>
+          <h3 id="instLogModalTitle" class="text-lg font-black text-slate-900">Student Decision Log</h3>
+          <p id="instLogModalSubtitle" class="text-xs text-slate-500">Round-by-round orders and outcomes</p>
+        </div>
+        <button onclick="closeInstructorStudentLogModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 border border-slate-100 rounded-xl mb-4">
+        <table class="w-full text-left text-xs font-mono-num">
+          <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold font-sans">
+            <tr>
+              <th class="py-2.5 px-3">Round</th>
+              <th class="py-2.5 px-3 text-right">Order ($Q$)</th>
+              <th class="py-2.5 px-3 text-right">Demand ($D$)</th>
+              <th class="py-2.5 px-3 text-right">Sold</th>
+              <th class="py-2.5 px-3 text-right">Unsold</th>
+              <th class="py-2.5 px-3 text-right">Round Profit</th>
+              <th class="py-2.5 px-3 text-right">Total Payoff</th>
+            </tr>
+          </thead>
+          <tbody id="instStudentLogTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="closeInstructorStudentLogModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 30-ROUND SUMMARY MODAL ================= -->
+  <div id="nvSummaryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center">
+      <div class="space-y-2 mb-6">
+        <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-2xl font-black">
+          <i data-lucide="trophy" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-2xl font-black text-slate-900">Campaign Concluded!</h3>
+        <p class="text-xs text-slate-500">30 Rounds of Newsvendor Ordering Completed.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
+          <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Total Payoff</span>
+          <span id="modalFinalProfit" class="text-2xl font-black text-emerald-600 font-mono-num">$0</span>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
+          <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Avg Order Quantity</span>
+          <span id="modalAvgOrder" class="text-2xl font-black text-indigo-600 font-mono-num">0</span>
+        </div>
+      </div>
+
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 mb-6 text-xs space-y-2 text-left">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-900">Ordering Pattern:</span>
+          <span id="modalArchetypeBadge" class="px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700">Evaluating...</span>
+        </div>
+        <p id="modalArchetypeExplanation" class="text-slate-600 leading-relaxed"></p>
+      </div>
+
+      <button onclick="closeSummaryModal()" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+        <i data-lucide="check" class="w-4 h-4"></i> View Complete Ledger
+      </button>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- ================= LOGIC & SCRIPTS ================= -->
+  <script>
+    const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzJAIW2rBQdSOObHMOcto8zTAQpKsOFFzVBPVLvNiRYg8yeabKBAuKrOVeCBrRDLn8c/exec";
+
+    const TOTAL_ROUNDS = 30;
+    const PRICE_PER_UNIT = 12;
+    const COST_PER_UNIT = 3;
+    const DEMAND_MIN = 201;
+    const DEMAND_MAX = 500;
+
+    let nvChartInstance = null;
+
+    function getFreshStudentState() {
+      return { round: 1, cumulativeProfit: 0, encounters: [], isCompleted: false };
+    }
+
+    const appState = {
+      user: null,
+      studentSim: getFreshStudentState(),
+      classStudents: [],
+      availableClasses: [],
+      selectedClassFilter: "ALL"
+    };
+
+    function switchLoginRole(role) {
+      const tabStudent = document.getElementById('roleTabStudent');
+      const tabInst = document.getElementById('roleTabInstructor');
+      const formStudent = document.getElementById('formStudentLogin');
+      const formInst = document.getElementById('formInstructorLogin');
+
+      if (role === 'student') {
+        tabStudent.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-white text-indigo-600 shadow-sm transition-all flex items-center justify-center gap-1.5";
+        tabInst.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5";
+        formStudent.classList.remove('hidden');
+        formInst.classList.add('hidden');
+      } else {
+        tabInst.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-white text-purple-600 shadow-sm transition-all flex items-center justify-center gap-1.5";
+        tabStudent.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5";
+        formInst.classList.remove('hidden');
+        formStudent.classList.add('hidden');
+      }
+    }
+
+    function loadClassListDropdown() {
+      const dropdown = document.getElementById('loginStudentClass');
+      dropdown.innerHTML = `<option value="">Loading classes from UserRoles...</option>`;
+
+      fetch(`${GOOGLE_SHEET_WEBAPP_URL}?action=getClasses`)
+        .then(res => res.json())
+        .then(data => {
+          appState.availableClasses = data;
+          populateDropdown(data);
+        })
+        .catch(err => {
+          console.warn("Using fallback class list", err);
+          appState.availableClasses = [{
+            classNumber: "BSAN-7021",
+            teacherName: "Dr. Sina Shokoohyar",
+            teacherUsername: "sina",
+            passcode: "NEWS26"
+          }];
+          populateDropdown(appState.availableClasses);
+        });
+    }
+
+    function populateDropdown(list) {
+      const dropdown = document.getElementById('loginStudentClass');
+      if (!list || list.length === 0) {
+        dropdown.innerHTML = `<option value="">No classes found in UserRoles</option>`;
+        return;
+      }
+      dropdown.innerHTML = list.map((c, idx) => `
+        <option value="${idx}">${c.classNumber} — ${c.teacherName}</option>
+      `).join('');
+    }
+
+    function handleStudentLogin(e) {
+      e.preventDefault();
+      const name = document.getElementById('loginStudentName').value.trim();
+      const selectedIdx = document.getElementById('loginStudentClass').value;
+      const pass = document.getElementById('loginStudentPasscode').value.trim();
+
+      if (!name || selectedIdx === "") {
+        showToast("Please enter your name and select a section.", "error");
+        return;
+      }
+
+      const match = appState.availableClasses[selectedIdx];
+      if (match && match.passcode && match.passcode !== pass) {
+        showToast("Incorrect class passcode!", "error");
+        return;
+      }
+
+      appState.user = {
+        role: 'student',
+        name: name,
+        classNumber: match.classNumber,
+        teacherUsername: match.teacherUsername
+      };
+
+      sessionStorage.setItem('nv_user', JSON.stringify(appState.user));
+      applyAuthenticatedSession();
+
+      const hasSeen = sessionStorage.getItem('nv_instructions_' + appState.user.name);
+      if (!hasSeen) {
+        openStudentInstructionModal();
+      }
+    }
+
+    function openStudentInstructionModal() {
+      document.getElementById('studentInstructionModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function dismissStudentInstructionModal() {
+      document.getElementById('studentInstructionModal').classList.add('hidden');
+      if (appState.user) {
+        sessionStorage.setItem('nv_instructions_' + appState.user.name, 'true');
+      }
+    }
+
+    function handleInstructorLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginTeacherUsername').value.trim();
+      const password = document.getElementById('loginTeacherPassword').value.trim();
+
+      if (!username || !password) {
+        showToast("Please enter username and password.", "error");
+        return;
+      }
+
+      fetch(`${GOOGLE_SHEET_WEBAPP_URL}?action=verifyTeacher&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            appState.user = {
+              role: 'instructor',
+              name: res.teacherName || username,
+              username: username.toLowerCase(),
+              password: password,
+              classes: res.classes || []
+            };
+            sessionStorage.setItem('nv_user', JSON.stringify(appState.user));
+            applyAuthenticatedSession();
+          } else {
+            showToast("Invalid Username or Password.", "error");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast("Could not verify teacher credentials.", "error");
+        });
+    }
+
+    function handleTeacherAddClass(e) {
+      e.preventDefault();
+      const u = appState.user;
+      if (!u || u.role !== 'instructor') return;
+
+      const cNum = document.getElementById('teacherNewClassNum').value.trim().toUpperCase();
+      const cPass = document.getElementById('teacherNewClassPass').value.trim();
+
+      if (!cNum || !cPass) return;
+
+      const params = new URLSearchParams({
+        action: 'addClass',
+        teacherName: u.name,
+        teacherUsername: u.username,
+        password: u.password || '',
+        classNumber: cNum,
+        studentPasscode: cPass
+      });
+
+      const btn = document.getElementById('btnSaveNewClass');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Saving...`;
+      lucide.createIcons();
+
+      fetch(`${GOOGLE_SHEET_WEBAPP_URL}?${params.toString()}`)
+        .then(res => res.json())
+        .then(res => {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Add Class to Sheet`;
+          lucide.createIcons();
+
+          if (res.success) {
+            showToast(`Added class ${cNum}!`, "success");
+            document.getElementById('teacherNewClassNum').value = '';
+            document.getElementById('teacherNewClassPass').value = '';
+
+            if (!u.classes) u.classes = [];
+            if (u.classes.indexOf(cNum) === -1) u.classes.push(cNum);
+            sessionStorage.setItem('nv_user', JSON.stringify(u));
+
+            populateTeacherClassFilter();
+            loadClassListDropdown();
+          } else {
+            showToast("Failed to add class.", "error");
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Add Class to Sheet`;
+          lucide.createIcons();
+          showToast("Error writing to sheet.", "error");
+        });
+    }
+
+    function populateTeacherClassFilter() {
+      const select = document.getElementById('teacherClassFilterSelect');
+      if (!select) return;
+
+      const currentVal = appState.selectedClassFilter;
+      const classList = (appState.user && appState.user.classes) ? appState.user.classes : [];
+
+      select.innerHTML = `<option value="ALL">All My Classes</option>` + 
+        classList.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      if (classList.indexOf(currentVal) !== -1 || currentVal === "ALL") {
+        select.value = currentVal;
+      } else {
+        select.value = "ALL";
+        appState.selectedClassFilter = "ALL";
+      }
+    }
+
+    function handleClassFilterChange(val) {
+      appState.selectedClassFilter = val;
+      updateInstructorRoster();
+    }
+
+    function handleSignOut() {
+      sessionStorage.removeItem('nv_user');
+      appState.user = null;
+      appState.studentSim = getFreshStudentState();
+      
+      closeSummaryModal();
+      document.getElementById('studentInstructionModal').classList.add('hidden');
+      document.getElementById('loginStudentName').value = '';
+      document.getElementById('loginStudentPasscode').value = '';
+      document.getElementById('loginTeacherUsername').value = '';
+      document.getElementById('loginTeacherPassword').value = '';
+      
+      document.getElementById('loginGateOverlay').classList.remove('hidden');
+      loadClassListDropdown();
+    }
+
+    function applyAuthenticatedSession() {
+      if (!appState.user) return;
+      document.getElementById('loginGateOverlay').classList.add('hidden');
+
+      const u = appState.user;
+      document.getElementById('headerUserName').innerText = u.name;
+      document.getElementById('headerUserSub').innerText = u.role === 'instructor' ? 'Teacher Portal' : `Class: ${u.classNumber}`;
+
+      const badge = document.getElementById('headerRoleBadge');
+      const btnHeaderRules = document.getElementById('btnHeaderRules');
+
+      if (u.role === 'instructor') {
+        badge.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200";
+        badge.innerText = "Teacher Portal";
+        document.getElementById('teacherDashboardName').innerText = u.name;
+        document.getElementById('teacherUsernameSub').innerText = `Username: @${u.username}`;
+        btnHeaderRules.classList.add('hidden');
+        btnHeaderRules.classList.remove('sm:flex');
+        populateTeacherClassFilter();
+      } else {
+        badge.className = "text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200";
+        badge.innerText = "Student Portal";
+        btnHeaderRules.classList.remove('hidden');
+        btnHeaderRules.classList.add('sm:flex');
+      }
+
+      loadStudentSimState();
+      renderViewMode();
+      initOrUpdateChart();
+      updateStudentLedgerUI();
+      lucide.createIcons();
+    }
+
+    function getStudentStorageKey() {
+      if (!appState.user) return null;
+      return `nv_${appState.user.teacherUsername}_${appState.user.classNumber}_${appState.user.name.replace(/\s+/g, '_')}`;
+    }
+
+    function saveStudentSimState() {
+      const key = getStudentStorageKey();
+      if (!key) return;
+      localStorage.setItem(key, JSON.stringify(appState.studentSim));
+    }
+
+    function loadStudentSimState() {
+      const key = getStudentStorageKey();
+      if (!key) {
+        appState.studentSim = getFreshStudentState();
+        return;
+      }
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          appState.studentSim = JSON.parse(saved);
+        } catch (e) {
+          appState.studentSim = getFreshStudentState();
+        }
+      } else {
+        appState.studentSim = getFreshStudentState();
+      }
+    }
+
+    function renderViewMode() {
+      const isInst = appState.user && appState.user.role === 'instructor';
+      const studentPortal = document.getElementById('nvStudentPortal');
+      const instPortal = document.getElementById('nvInstructorPortal');
+
+      if (isInst) {
+        studentPortal.classList.add('hidden');
+        instPortal.classList.remove('hidden');
+        fetchGoogleSheetRoster();
+      } else {
+        studentPortal.classList.remove('hidden');
+        instPortal.classList.add('hidden');
+      }
+    }
+
+    function syncSliderValue(val) {
+      document.getElementById('sliderValueBadge').innerText = val;
+      const cost = parseInt(val, 10) * COST_PER_UNIT;
+      document.getElementById('lblLiveOrderCost').innerText = '$' + cost.toLocaleString();
+    }
+
+    function handleOrderSubmission(e) {
+      e.preventDefault();
+      const sim = appState.studentSim;
+      if (sim.isCompleted) {
+        showToast("Your 30-round campaign is finalized and locked.", "info");
+        return;
+      }
+
+      const slider = document.getElementById('rangeOrderQuantity');
+      const orderQty = parseInt(slider.value, 10);
+
+      if (isNaN(orderQty) || orderQty < DEMAND_MIN || orderQty > DEMAND_MAX) {
+        showToast("Order must be between 201 and 500.", "error");
+        return;
+      }
+
+      const currentRound = sim.encounters.length + 1;
+      const realizedDemand = Math.floor(Math.random() * (DEMAND_MAX - DEMAND_MIN + 1)) + DEMAND_MIN;
+
+      const sold = Math.min(orderQty, realizedDemand);
+      const unsold = Math.max(0, orderQty - realizedDemand);
+      const stockout = Math.max(0, realizedDemand - orderQty);
+
+      const revenue = sold * PRICE_PER_UNIT;
+      const cost = orderQty * COST_PER_UNIT;
+      const roundProfit = revenue - cost;
+
+      sim.cumulativeProfit += roundProfit;
+
+      sim.encounters.unshift({
+        round: currentRound,
+        order: orderQty,
+        demand: realizedDemand,
+        sold: sold,
+        unsold: unsold,
+        stockout: stockout,
+        revenue: revenue,
+        cost: cost,
+        profit: roundProfit,
+        cumulativeProfit: sim.cumulativeProfit
+      });
+
+      if (sim.encounters.length >= TOTAL_ROUNDS) {
+        sim.isCompleted = true;
+        sim.round = TOTAL_ROUNDS;
+        saveStudentSimState();
+        sendSubmissionToGoogleSheet();
+        updateStudentLedgerUI();
+        initOrUpdateChart();
+        setTimeout(() => {
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+          openSummaryModal();
+        }, 350);
+      } else {
+        sim.round = sim.encounters.length + 1;
+        saveStudentSimState();
+        updateStudentLedgerUI();
+        initOrUpdateChart();
+      }
+    }
+
+    // ================= LIVE ORDER VS DEMAND CHART (NO OPTIMAL LINE) =================
+    function initOrUpdateChart() {
+      const ctx = document.getElementById('nvTrajectoryChart');
+      if (!ctx) return;
+
+      const sim = appState.studentSim;
+      const chronological = [...sim.encounters].sort((a, b) => a.round - b.round);
+
+      const labels = chronological.map(r => `R${r.round}`);
+      const orderData = chronological.map(r => r.order);
+      const demandData = chronological.map(r => r.demand);
+
+      if (nvChartInstance) {
+        nvChartInstance.data.labels = labels;
+        nvChartInstance.data.datasets[0].data = orderData;
+        nvChartInstance.data.datasets[1].data = demandData;
+        nvChartInstance.update();
+      } else {
+        nvChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Order (Q)',
+                data: orderData,
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderWidth: 2.5,
+                tension: 0.2,
+                pointRadius: 4,
+                pointBackgroundColor: '#4f46e5',
+                fill: false
+              },
+              {
+                label: 'Demand (D)',
+                data: demandData,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                tension: 0.2,
+                pointRadius: 3.5,
+                pointBackgroundColor: '#f59e0b',
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: 10,
+                titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 'bold' },
+                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                callbacks: {
+                  label: function(context) {
+                    return ` ${context.dataset.label}: ${context.parsed.y} units`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { family: 'JetBrains Mono', size: 10 } }
+              },
+              y: {
+                min: 180,
+                max: 520,
+                ticks: {
+                  stepSize: 50,
+                  font: { family: 'JetBrains Mono', size: 10 }
+                },
+                grid: { color: '#f1f5f9' }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function updateStudentLedgerUI() {
+      const sim = appState.studentSim;
+      const count = sim.encounters.length;
+
+      document.getElementById('nvCumulativeProfit').innerText = (sim.cumulativeProfit < 0 ? '-$' : '$') + Math.abs(sim.cumulativeProfit).toLocaleString();
+
+      const pct = Math.min(100, Math.round((count / TOTAL_ROUNDS) * 100));
+      document.getElementById('nvProgressBar').style.width = `${pct}%`;
+
+      if (sim.isCompleted || count >= TOTAL_ROUNDS) {
+        document.getElementById('nvRoundStatusBadge').innerText = "30 of 30";
+        document.getElementById('orderInputSection').classList.add('hidden');
+        document.getElementById('nvCompletedBanner').classList.remove('hidden');
+      } else {
+        document.getElementById('nvRoundStatusBadge').innerText = `Round ${count + 1}`;
+        document.getElementById('lblCurrentRoundHeader').innerText = `Round ${count + 1} of 30`;
+        document.getElementById('orderInputSection').classList.remove('hidden');
+        document.getElementById('nvCompletedBanner').classList.add('hidden');
+      }
+
+      const totalOrdered = sim.encounters.reduce((acc, r) => acc + r.order, 0);
+      const avgOrder = count > 0 ? Math.round(totalOrdered / count) : 0;
+      const avgProfit = count > 0 ? Math.round(sim.cumulativeProfit / count) : 0;
+
+      document.getElementById('lblAvgOrderDisplay').innerText = avgOrder.toLocaleString();
+      document.getElementById('lblAvgProfitDisplay').innerText = (avgProfit < 0 ? '-$' : '$') + Math.abs(avgProfit).toLocaleString();
+      document.getElementById('lblAvgProfitPill').innerText = `Avg: ${(avgProfit < 0 ? '-$' : '$') + Math.abs(avgProfit).toLocaleString()}/round`;
+
+      const tbody = document.getElementById('nvStudentLedgerBody');
+      if (sim.encounters.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 font-sans">No orders placed yet. Select quantity with the slider above.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = sim.encounters.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3 font-bold text-slate-700 font-sans">#${r.round}</td>
+          <td class="py-2.5 px-3 text-right font-bold text-indigo-700">${r.order.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right text-slate-600">${r.demand.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right text-emerald-600 font-semibold">${r.sold.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right ${r.unsold > 0 ? 'text-amber-600' : 'text-slate-400'}">${r.unsold.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right ${r.stockout > 0 ? 'text-rose-600' : 'text-slate-400'}">${r.stockout.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-right font-bold ${r.profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+            ${r.profit >= 0 ? '+$' + r.profit.toLocaleString() : '-$' + Math.abs(r.profit).toLocaleString()}
+          </td>
+          <td class="py-2.5 px-3 text-right font-bold text-slate-900">
+            ${r.cumulativeProfit >= 0 ? '$' + r.cumulativeProfit.toLocaleString() : '-$' + Math.abs(r.cumulativeProfit).toLocaleString()}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openSummaryModal() {
+      const sim = appState.studentSim;
+      document.getElementById('modalFinalProfit').innerText = (sim.cumulativeProfit < 0 ? '-$' : '$') + Math.abs(sim.cumulativeProfit).toLocaleString();
+
+      const totalOrdered = sim.encounters.reduce((acc, r) => acc + r.order, 0);
+      const avgOrder = Math.round(totalOrdered / (sim.encounters.length || 1));
+      document.getElementById('modalAvgOrder').innerText = avgOrder.toLocaleString();
+
+      let archetype = "Balanced Risk Strategy";
+      let explanation = "Your orders maintained an active balance between meeting peak demand and hedging against excess unsold copies.";
+
+      if (avgOrder < 320) {
+        archetype = "Conservative Stocker";
+        explanation = "You consistently ordered near the lower half of the demand range, prioritizing low inventory risk over missed sales.";
+      } else if (avgOrder >= 320 && avgOrder <= 380) {
+        archetype = "Central Tendency Stocker";
+        explanation = "You tended to center your decisions around the midpoint of the demand range throughout the 30 rounds.";
+      } else if (avgOrder > 450) {
+        archetype = "High-Capacity Stocker";
+        explanation = "You aimed to capture top-end demand spikes, prioritizing maximum possible sales over holding surplus units.";
+      }
+
+      document.getElementById('modalArchetypeBadge').innerText = archetype;
+      document.getElementById('modalArchetypeExplanation').innerText = explanation;
+      document.getElementById('nvSummaryModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('nvSummaryModal').classList.add('hidden');
+    }
+
+    function sendSubmissionToGoogleSheet() {
+      const sim = appState.studentSim;
+      const u = appState.user;
+      if (!u || u.role !== 'student') return;
+
+      const totalOrdered = sim.encounters.reduce((acc, r) => acc + r.order, 0);
+      const avgOrder = Math.round(totalOrdered / (sim.encounters.length || 1));
+
+      let archetype = "Balanced Strategy";
+      if (avgOrder < 320) archetype = "Conservative";
+      else if (avgOrder <= 380) archetype = "Midpoint-Anchored";
+      else if (avgOrder > 450) archetype = "High-Capacity";
+
+      const compactEncounters = sim.encounters.map(r => ({
+        r: r.round,
+        q: r.order,
+        d: r.demand,
+        s: r.sold,
+        u: r.unsold,
+        p: r.profit,
+        b: r.cumulativeProfit
+      }));
+
+      const params = new URLSearchParams({
+        action: 'submitStudentLog',
+        teacherUsername: u.teacherUsername,
+        classNumber: u.classNumber,
+        name: u.name,
+        profit: sim.cumulativeProfit,
+        avgOrder: avgOrder,
+        archetype: archetype,
+        encounters: JSON.stringify(compactEncounters)
+      });
+
+      fetch(`${GOOGLE_SHEET_WEBAPP_URL}?${params.toString()}`)
+        .then(() => showToast("Saved to StudentLogs sheet!", "success"))
+        .catch(err => console.warn(err));
+    }
+
+    function fetchGoogleSheetRoster() {
+      const u = appState.user;
+      if (!u || u.role !== 'instructor') return;
+
+      const btn = document.getElementById('btnFetchSyncResults');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> <span>Syncing...</span>`;
+        lucide.createIcons();
+      }
+
+      showToast("Fetching latest Newsvendor logs...", "info");
+
+      fetch(`${GOOGLE_SHEET_WEBAPP_URL}?action=getStudentLogs&teacherUsername=${encodeURIComponent(u.username)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i> <span>Fetch & Sync Results</span>`;
+            lucide.createIcons();
+          }
+
+          if (Array.isArray(data)) {
+            appState.classStudents = data;
+
+            const loadedClasses = Array.from(new Set(data.map(d => d.classNumber).filter(Boolean)));
+            if (!u.classes) u.classes = [];
+            loadedClasses.forEach(c => {
+              if (u.classes.indexOf(c) === -1) u.classes.push(c);
+            });
+            sessionStorage.setItem('nv_user', JSON.stringify(u));
+            populateTeacherClassFilter();
+
+            updateInstructorRoster();
+            showToast(`Synced ${data.length} student submissions!`, "success");
+          }
+        })
+        .catch(err => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i> <span>Fetch & Sync Results</span>`;
+            lucide.createIcons();
+          }
+          console.error(err);
+          showToast("Error connecting to StudentLogs.", "error");
+        });
+    }
+
+    function openStudentLogForInstructor(studentName) {
+      const student = appState.classStudents.find(s => s.name === studentName);
+      if (!student) return;
+
+      const rawProfit = typeof student.profit === "number" ? student.profit : parseFloat(String(student.profit || 0).replace(/[^0-9.-]/g, '')) || 0;
+
+      document.getElementById('instLogModalTitle').innerText = `${student.name}'s Round Ledger`;
+      document.getElementById('instLogModalSubtitle').innerText = `Class: ${student.classNumber} • Total Payoff: $${rawProfit.toLocaleString()}`;
+
+      const tbody = document.getElementById('instStudentLogTableBody');
+      const encounters = student.encounters || [];
+
+      if (encounters.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 font-sans">No round logs recorded for this student.</td></tr>`;
+      } else {
+        const sorted = [...encounters].sort((a, b) => (a.round || a.r) - (b.round || b.r));
+        tbody.innerHTML = sorted.map(r => {
+          const round = r.round || r.r;
+          const order = r.order !== undefined ? r.order : r.q;
+          const demand = r.demand !== undefined ? r.demand : r.d;
+          const sold = r.sold !== undefined ? r.sold : r.s;
+          const unsold = r.unsold !== undefined ? r.unsold : r.u;
+          const profit = r.profit !== undefined ? r.profit : r.p;
+          const cumulative = r.cumulativeProfit !== undefined ? r.cumulativeProfit : r.b;
+
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2.5 px-3 font-bold text-slate-700 font-sans">#${round}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-indigo-700">${order}</td>
+              <td class="py-2.5 px-3 text-right text-slate-600">${demand}</td>
+              <td class="py-2.5 px-3 text-right text-emerald-600 font-semibold">${sold}</td>
+              <td class="py-2.5 px-3 text-right ${unsold > 0 ? 'text-amber-600' : 'text-slate-400'}">${unsold}</td>
+              <td class="py-2.5 px-3 text-right font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                ${profit >= 0 ? '+$' + profit.toLocaleString() : '-$' + Math.abs(profit).toLocaleString()}
+              </td>
+              <td class="py-2.5 px-3 text-right font-bold text-slate-900">
+                ${cumulative >= 0 ? '$' + cumulative.toLocaleString() : '-$' + Math.abs(cumulative).toLocaleString()}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('instructorStudentLogModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeInstructorStudentLogModal() {
+      document.getElementById('instructorStudentLogModal').classList.add('hidden');
+    }
+
+    function updateInstructorRoster() {
+      const tbody = document.getElementById('instRosterBody');
+      const counter = document.getElementById('instStudentCount');
+      if (!tbody) return;
+
+      const filter = appState.selectedClassFilter;
+      let filtered = appState.classStudents.filter(st => {
+        if (filter === "ALL") return true;
+        return st.classNumber === filter;
+      });
+
+      filtered.sort((a, b) => {
+        const valA = typeof a.profit === "number" ? a.profit : parseFloat(String(a.profit || 0).replace(/[^0-9.-]/g, '')) || 0;
+        const valB = typeof b.profit === "number" ? b.profit : parseFloat(String(b.profit || 0).replace(/[^0-9.-]/g, '')) || 0;
+        return valB - valA;
+      });
+
+      counter.innerText = `${filtered.length} Submissions`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 font-sans">No submissions found. Click 'Fetch & Sync Results' above.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((st, idx) => {
+        let medalBadge = "";
+        let rankNumber = idx + 1;
+
+        if (rankNumber === 1) medalBadge = `<span class="text-base" title="1st Place (Gold)">🥇</span>`;
+        else if (rankNumber === 2) medalBadge = `<span class="text-base" title="2nd Place (Silver)">🥈</span>`;
+        else if (rankNumber === 3) medalBadge = `<span class="text-base" title="3rd Place (Bronze)">🥉</span>`;
+        else medalBadge = `<span class="text-slate-400 font-bold text-xs">#${rankNumber}</span>`;
+
+        const rawProfit = typeof st.profit === "number" ? st.profit : parseFloat(String(st.profit || 0).replace(/[^0-9.-]/g, '')) || 0;
+        const rawAvgOrder = typeof st.avgOrder === "number" ? st.avgOrder : parseFloat(String(st.avgOrder || 0).replace(/[^0-9.-]/g, '')) || 0;
+
+        return `
+          <tr class="hover:bg-slate-50 transition ${rankNumber <= 3 ? 'bg-amber-50/20' : ''}">
+            <td class="py-2.5 px-3 text-center">${medalBadge}</td>
+            <td class="py-2.5 px-3 font-mono-num font-bold text-slate-700">${st.classNumber}</td>
+            <td class="py-2.5 px-3 font-sans">
+              <div class="font-bold text-slate-900">${st.name}</div>
+            </td>
+            <td class="py-2.5 px-3 font-sans">
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 border border-slate-200 text-slate-700">
+                ${st.archetype}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 text-right font-semibold text-slate-700 font-mono-num">${rawAvgOrder.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-right font-black ${rawProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} text-sm font-mono-num">
+              ${rawProfit >= 0 ? '$' + rawProfit.toLocaleString() : '-$' + Math.abs(rawProfit).toLocaleString()}
+            </td>
+            <td class="py-2.5 px-3 text-center font-sans">
+              <button onclick="openStudentLogForInstructor('${st.name}')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-indigo-600 hover:text-indigo-700 rounded-lg text-xs font-semibold shadow-sm transition">
+                View Log
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = type === 'error' 
+        ? 'bg-rose-50 border-rose-200 text-rose-800' 
+        : (type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-slate-200 text-slate-800');
+
+      toast.className = `${colors} border px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold transition-all transform duration-300 pointer-events-auto`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadClassListDropdown();
+
+      const cachedUser = sessionStorage.getItem('nv_user');
+      if (cachedUser) {
+        try {
+          appState.user = JSON.parse(cachedUser);
+          applyAuthenticatedSession();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
