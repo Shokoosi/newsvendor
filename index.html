@@ -97,57 +97,87 @@
     </div>
   </div>
 
-  <!-- ================= INSTRUCTION BRIEFING MODAL ================= -->
-  <div id="studentInstructionModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-200">
+  <!-- ================= INSTRUCTION BRIEFING MODAL (WIDER & COMPACT) ================= -->
+  <div id="studentInstructionModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 hidden">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 max-w-4xl w-full shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
       
-      <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
-        <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
-          <i data-lucide="scroll" class="w-6 h-6"></i>
+      <!-- Modal Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
+            <i data-lucide="scroll" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+              Rules of the Game
+            </span>
+            <h2 class="text-lg font-black text-slate-900 tracking-tight mt-0.5">Newsvendor Problem Instructions</h2>
+          </div>
         </div>
-        <div>
-          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-            Rules of the Game
-          </span>
-          <h2 class="text-xl font-black text-slate-900 tracking-tight mt-0.5">Newsvendor Problem Instructions</h2>
+
+        <!-- Designer Credit Badge -->
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-[11px] text-slate-600">
+          <i data-lucide="user-check" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
+          <span>This simulation game is designed by <strong>Dr. Sina Shokoohyar</strong> (any questions contact him at <a href="mailto:shokoosi@shu.edu" class="text-indigo-600 hover:underline font-semibold font-mono-num">shokoosi@shu.edu</a>).</span>
         </div>
       </div>
 
-      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm text-slate-700 leading-relaxed space-y-3 font-normal">
-        <p>
-          You will play the role of a newspaper vendor in a game consisting of <strong>30 rounds</strong>, with one ordering decision to be made in each round. All 30 rounds are payoff-relevant.
-        </p>
-        <p>
-          In each round, you must decide how many newspapers to order before knowing the actual customer demand. You may order any integer quantity.
-        </p>
-        <div class="grid grid-cols-2 gap-3 py-1">
-          <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
-            <span class="text-[10px] uppercase tracking-wider text-emerald-800 font-bold block">Selling Price</span>
-            <span class="text-lg font-black text-emerald-700 font-mono-num">$12.00</span>
-            <span class="text-[11px] text-emerald-600 block">per newspaper sold</span>
+      <!-- 2-Column Content Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+        
+        <!-- Left Column: Scenario & Price Economics -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 flex flex-col justify-between">
+          <div class="space-y-2">
+            <p>
+              You will play the role of a newspaper vendor in a game consisting of <strong>30 rounds</strong>, with one ordering decision to be made in each round. All 30 rounds are payoff-relevant.
+            </p>
+            <p>
+              In each round, you must decide how many newspapers to order before knowing customer demand. You may order any integer quantity.
+            </p>
           </div>
-          <div class="bg-rose-50 border border-rose-200 p-3 rounded-xl">
-            <span class="text-[10px] uppercase tracking-wider text-rose-800 font-bold block">Purchase Cost</span>
-            <span class="text-lg font-black text-rose-700 font-mono-num">$3.00</span>
-            <span class="text-[11px] text-rose-600 block">per newspaper ordered</span>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-center">
+              <span class="text-[10px] uppercase tracking-wider text-emerald-800 font-bold block">Selling Price</span>
+              <span class="text-base font-black text-emerald-700 font-mono-num">$12.00</span>
+              <span class="text-[10px] text-emerald-600 block">per unit sold</span>
+            </div>
+            <div class="bg-rose-50 border border-rose-200 p-2.5 rounded-xl text-center">
+              <span class="text-[10px] uppercase tracking-wider text-rose-800 font-bold block">Purchase Cost</span>
+              <span class="text-base font-black text-rose-700 font-mono-num">$3.00</span>
+              <span class="text-[10px] text-rose-600 block">per unit ordered</span>
+            </div>
           </div>
         </div>
-        <p>
-          Customer demand will always be <strong>between 201 and 500 newspapers</strong>, and every integer quantity between 201 and 500 is equally likely to occur. The computer will randomly generate the demand after you submit your order.
-        </p>
-        <p>
-          Once demand is realized, the quantity sold and your profit for that round will be calculated automatically:
-          $$\text{Round Profit} = \$12 \times \min(Q, D) - \$3 \times Q$$
-        </p>
-        <p class="text-xs text-slate-500">
-          At the end of the game, the profits from all 30 rounds will be added together to determine your total payoff. Your goal is to make effective ordering decisions and maximize your total profit over the 30 rounds.
-        </p>
+
+        <!-- Right Column: Demand Distribution & Profit Formula -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 flex flex-col justify-between">
+          <div class="space-y-2">
+            <p>
+              Customer demand will always be <strong>between 201 and 500 newspapers</strong>, and every integer quantity in this range is equally likely to occur. Demand is randomly generated after you submit your order.
+            </p>
+            <p class="text-[11px] text-slate-500">
+              Once demand is realized, the quantity sold and your profit for that round are calculated automatically:
+            </p>
+          </div>
+
+          <div class="bg-indigo-50/90 border border-indigo-200 rounded-xl p-2.5 text-center font-mono-num text-xs sm:text-sm text-indigo-950 font-bold shadow-sm">
+            Round Profit = ($12 &times; Sold) &minus; ($3 &times; Ordered)
+          </div>
+
+          <p class="text-[11px] text-slate-500 leading-tight">
+            At the end of the game, profits from all 30 rounds are summed to determine your final payoff.
+          </p>
+        </div>
+
       </div>
 
-      <button onclick="dismissStudentInstructionModal()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
-        <span>I Understand — Start Round 1</span>
+      <!-- Action Button -->
+      <button onclick="dismissStudentInstructionModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
+        <span>I Understand &mdash; Start Round 1</span>
         <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </button>
+
     </div>
   </div>
 
@@ -269,7 +299,7 @@
                 </span>
                 <span id="lblCurrentRoundHeader" class="text-xs font-bold text-slate-600">Round 1 of 30</span>
               </div>
-              <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">Select Order Quantity ($Q$)</h3>
+              <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">Select Order Quantity (Q)</h3>
               <p class="text-xs text-slate-500">Slide to specify the number of newspapers to order for today's market.</p>
             </div>
             
@@ -317,7 +347,7 @@
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
               <div class="flex items-center gap-2 text-xs text-slate-500">
                 <i data-lucide="info" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
-                <span>Decision rule: Demand $D$ is sampled immediately after ordering. All 30 rounds are irreversible.</span>
+                <span>Decision rule: Demand D is sampled immediately after ordering. All 30 rounds are irreversible.</span>
               </div>
               <button type="submit" id="btnSubmitOrder" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-2xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                 <i data-lucide="check" class="w-4 h-4"></i> Submit Round Order
@@ -341,18 +371,18 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="line-chart" class="w-4 h-4 text-indigo-600"></i> Trajectory: Order Quantity ($Q$) vs. Realized Demand ($D$)
+              <i data-lucide="line-chart" class="w-4 h-4 text-indigo-600"></i> Trajectory: Order Quantity (Q) vs. Realized Demand (D)
             </h4>
             <p class="text-xs text-slate-500">Visualizes round-by-round overstocking, understocking, and order adjustments.</p>
           </div>
           <div class="flex items-center gap-4 text-xs font-semibold">
             <div class="flex items-center gap-1.5">
               <span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span>
-              <span class="text-slate-700">Order Quantity ($Q$)</span>
+              <span class="text-slate-700">Order Quantity (Q)</span>
             </div>
             <div class="flex items-center gap-1.5">
               <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-              <span class="text-slate-700">Realized Demand ($D$)</span>
+              <span class="text-slate-700">Realized Demand (D)</span>
             </div>
           </div>
         </div>
@@ -379,8 +409,8 @@
             <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold font-sans">
               <tr>
                 <th class="py-2.5 px-3">Round</th>
-                <th class="py-2.5 px-3 text-right">Order ($Q$)</th>
-                <th class="py-2.5 px-3 text-right">Demand ($D$)</th>
+                <th class="py-2.5 px-3 text-right">Order (Q)</th>
+                <th class="py-2.5 px-3 text-right">Demand (D)</th>
                 <th class="py-2.5 px-3 text-right">Sold</th>
                 <th class="py-2.5 px-3 text-right">Unsold</th>
                 <th class="py-2.5 px-3 text-right">Stockout</th>
@@ -455,22 +485,22 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
           <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Underage Cost ($c_u$)</span>
+            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Underage Cost (c<sub>u</sub>)</span>
             <span class="text-lg font-black text-slate-900 font-mono-num">$9.00</span>
             <span class="text-[11px] text-slate-500 block">$12 - $3</span>
           </div>
           <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Overage Cost ($c_o$)</span>
+            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Overage Cost (c<sub>o</sub>)</span>
             <span class="text-lg font-black text-slate-900 font-mono-num">$3.00</span>
             <span class="text-[11px] text-slate-500 block">$3 - $0 salvage</span>
           </div>
           <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-200">
-            <span class="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block">Critical Ratio ($CR$)</span>
+            <span class="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block">Critical Ratio (CR)</span>
             <span class="text-lg font-black text-indigo-700 font-mono-num">0.75</span>
             <span class="text-[11px] text-indigo-600 block">9 / (9 + 3) = 75%</span>
           </div>
           <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
-            <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">Optimal Order ($Q^*$)</span>
+            <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">Optimal Order (Q<sup>*</sup>)</span>
             <span class="text-lg font-black text-emerald-700 font-mono-num">425 units</span>
             <span class="text-[11px] text-emerald-700 block">201 + 0.75 &times; 299</span>
           </div>
@@ -543,8 +573,8 @@
           <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold font-sans">
             <tr>
               <th class="py-2.5 px-3">Round</th>
-              <th class="py-2.5 px-3 text-right">Order ($Q$)</th>
-              <th class="py-2.5 px-3 text-right">Demand ($D$)</th>
+              <th class="py-2.5 px-3 text-right">Order (Q)</th>
+              <th class="py-2.5 px-3 text-right">Demand (D)</th>
               <th class="py-2.5 px-3 text-right">Sold</th>
               <th class="py-2.5 px-3 text-right">Unsold</th>
               <th class="py-2.5 px-3 text-right">Round Profit</th>
